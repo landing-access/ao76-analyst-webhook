@@ -16,24 +16,40 @@ MANUS_API_KEY = os.environ.get('MANUS_API_KEY', 'sk-Apa5NF86lrjqXkf7puttAZ4796eu
 MANUS_API_URL = 'https://api.manus.ai/v1/tasks'
 
 # The complete prompt for Manus
-ANALYSIS_PROMPT = """Analyseer het AO76 dashboard op https://app.databox.com/datawall/f6cacd629eb4539a638d4480099e8f2c390c3f8692ef623 volgens de werkwijze in https://docs.google.com/document/d/1scmaUysEz8RCG_aBL17vEWGsEA42ovcoYbhuyXid1DM/edit?usp=sharing en post de briefing naar de Notion pagina https://www.notion.so/landingpartners/AO76-Weekly-performance-meetings-be479359449646ea8e4d44527d5e5159 als een toggle block.
+ANALYSIS_PROMPT = """Analyseer het AO76 dashboard op https://app.databox.com/datawall/f6cacd629eb4539a638d4480099e8f2c390c3f8692ef623 volgens de werkwijze in https://docs.google.com/document/d/1scmaUysEz8RCG_aBL17vEWGsEA42ovcoYbhuyXid1DM/edit?usp=sharing
 
 Volg deze stappen:
 1. Open het dashboard en verzamel alle relevante data (scroll door alle pagina's indien nodig)
-2. Analyseer de data volgens de werkwijze in het Google Docs document. Neem het volledig document door zodat je alles goed ophebt.
+2. Analyseer de data volgens de werkwijze in het Google Docs document
 3. Genereer een Weekly Performance Briefing volgens de mandatory output structure
-4. Post de briefing naar de Notion pagina als een toggle block (zoals je eerder hebt gedaan)
+
+4. Vervang de BRIEFING_PLACEHOLDER in de Notion pagina https://www.notion.so/landingpartners/AO76-Weekly-performance-meetings-be479359449646ea8e4d44527d5e5159 met de nieuwe briefing.
+
+Gebruik de notion-update-page tool via MCP met deze parameters:
+- command: replace_content_range
+- selection_with_ellipsis: "<!-- BRIEFING_PLACEHOLDER_START -->...<!-- BRIEFING_PLACEHOLDER_END -->"
+- page_id: be479359449646ea8e4d44527d5e5159
+
+BELANGRIJK: De nieuwe content moet beginnen met <!-- BRIEFING_PLACEHOLDER_START --> en eindigen met <!-- BRIEFING_PLACEHOLDER_END --> zodat de placeholder behouden blijft voor toekomstige updates.
+
+Format de briefing als een toggle block met deze structuur:
+▶ 📊 Week [datum] - Performance Briefing
+	<callout icon="⏱️" color="gray_bg">
+	**EXECUTIVE SUMMARY**
+	[summary]
+	</callout>
+	
+	[rest van de briefing met alle secties]
 
 Belangrijke aandachtspunten:
 - Gebruik de specifieke tone of voice en afkortingen (MTD, L14D, TOFU/MOFU, PC, A+camp)
 - Zorg voor context bij alle cijfers (efficiency vs. volume)
 - Frame aanbevelingen als suggesties, niet als orders
 - Gebruik de Landing Partners communicatiestijl (direct, zelfverzekerd, strategisch)
-- Maak een toggle block met de datum als titel
 - Gebruik callout blocks voor key insights
 - Gebruik emojis en bold formatting zoals in de voorbeelden
 
-De Notion credentials zijn al geconfigureerd in je environment."""
+De Notion MCP connectie is al geconfigureerd."""
 
 def trigger_manus_task():
     """Trigger Manus AI to perform the analysis"""
@@ -70,9 +86,9 @@ def home():
     """Home page"""
     return jsonify({
         "service": "AO76 Weekly Briefing Webhook (Manus Integration)",
-        "version": "2.0",
+        "version": "2.1",
         "status": "running",
-        "description": "Triggers Manus AI to analyze AO76 dashboard and post briefing to Notion",
+        "description": "Triggers Manus AI to analyze AO76 dashboard and post briefing to Notion using placeholder replacement",
         "endpoints": {
             "/generate-briefing": "POST/GET - Trigger Manus AI analysis",
             "/health": "GET - Health check"
@@ -96,7 +112,7 @@ def generate_briefing():
             "manus_task_id": manus_result.get('task_id'),
             "manus_task_url": manus_result.get('task_url'),
             "timestamp": datetime.now().isoformat(),
-            "note": "Manus AI is now analyzing the dashboard and will post the briefing to Notion. Check the task URL for progress."
+            "note": "Manus AI is now analyzing the dashboard and will replace the BRIEFING_PLACEHOLDER in Notion. Check the task URL for progress."
         })
         
     except Exception as e:
@@ -114,7 +130,7 @@ def health():
     """Health check endpoint"""
     return jsonify({
         "status": "healthy",
-        "version": "2.0",
+        "version": "2.1",
         "manus_api_configured": bool(MANUS_API_KEY),
         "timestamp": datetime.now().isoformat()
     })
@@ -124,3 +140,4 @@ if __name__ == '__main__':
     print(f"🚀 Starting AO76 Briefing Webhook on port {port}")
     print(f"🤖 Manus API configured: {bool(MANUS_API_KEY)}")
     app.run(host='0.0.0.0', port=port, debug=False)
+
